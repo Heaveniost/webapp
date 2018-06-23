@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-__author__ = 'Michael Liao'
+__author__ = 'Heaven'
 
 import asyncio, logging
 
@@ -11,7 +11,7 @@ def log(sql, args=()):
     logging.info('SQL: %s' % sql)
 
 @asyncio.coroutine #把下面的函数变成协程
-def create_pool(loop, **kw):
+def create_pool(loop, **kw): #创建全局的连接池
     logging.info('create database connection pool...')
     global __pool
     __pool = yield from aiomysql.create_pool(
@@ -27,7 +27,7 @@ def create_pool(loop, **kw):
         loop=loop
     )
 
-@asyncio.coroutine
+@asyncio.coroutine  # select
 def select(sql, args, size=None):
     log(sql, args)
     global __pool
@@ -43,7 +43,7 @@ def select(sql, args, size=None):
         return rs
         #sql.replace()这里为什么只有两个参数
 
-@asyncio.coroutine
+@asyncio.coroutine # insert delete update
 def execute(sql, args, autocommit=True):
     log(sql)
     with (yield from __pool) as conn:
@@ -68,7 +68,7 @@ def create_args_string(num):
         L.append('?')
     return ', '.join(L)
 
-class Field(object):
+class Field(object): # 定义 Field
 
     def __init__(self, name, column_type, primary_key, default):
         self.name = name
@@ -140,7 +140,7 @@ class ModelMetaclass(type):
         attrs['__delete__'] = 'delete from `%s` where `%s`=?' % (tableName, primaryKey)
         return type.__new__(cls, name, bases, attrs)
 
-class Model(dict, metaclass=ModelMetaclass):
+class Model(dict, metaclass=ModelMetaclass): # 定义 ORM 映射的基类
 
     def __init__(self, **kw):
         super(Model, self).__init__(**kw)
@@ -239,3 +239,5 @@ class Model(dict, metaclass=ModelMetaclass):
         rows = yield from execute(self.__delete__, args)
         if rows != 1:
             logging.warn('failed to remove by primary key: affected rows: %s' % rows)
+
+            
