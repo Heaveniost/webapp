@@ -1,5 +1,6 @@
-#coding=utf-8
+# -*- coding: utf-8 -*- 
 
+author = 'Heaven'
 
 import time, uuid
 
