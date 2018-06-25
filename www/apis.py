@@ -8,6 +8,7 @@ JSON API definition.
 
 import json, logging, inspect, functools
 
+# Page类用于存储分页信息
 class Page(object):
     '''
     Page object for display pages.

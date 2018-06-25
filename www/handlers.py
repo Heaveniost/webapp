@@ -164,6 +164,14 @@ def signout(request):
 	return r 
 
 
+# 管理博客页
+@get('/manage/blogs')
+def manage_blogs(*, page='1'):
+	return {
+		'__template__': 'manage_blogs.html',
+		'page_index': get_page_index(page)
+	}
+
 # 日志创建页
 @get('/manage/blogs/create')
 def manage_create_blog():
@@ -207,11 +215,24 @@ def api_register_user(*, email, name, passwd):
 	r.body = json.dumps(user, ensure_ascii=False).encode('utf-8')
 	return r
 
+# 显示博客页
+@get('/api/blogs')
+def api_blogs(*, page='1'):
+	page_index = get_page_index(page)
+	num = yield from Blog.findNumber('count(id)')
+	p = Page(num, page_index)
+	if num == 0:
+		return dict(page=p, blogs=())
+	blogs = yield from Blog.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
+	return dict(page=p, blogs=blogs)
 
+
+# 创建新博客后返回数据
 @get('/api/blogs/{id}')
 def api_get_blog(*, id):
 	blog = yield from Blog.find(id)
 	return blog
+
 
 # 检查用户身份和博客内容
 @post('/api/blogs')
@@ -226,6 +247,11 @@ def api_create_blog(request, *, name, summary, content):
     blog = Blog(user_id=request.__user__.id, user_name=request.__user__.name, user_image=request.__user__.image, name=name.strip(), summary=summary.strip(), content=content.strip())
     yield from blog.save()
     return blog 
+
+
+
+
+
 
 
 
