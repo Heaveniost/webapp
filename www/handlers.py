@@ -46,10 +46,12 @@ def user2cookie(user, max_age):
 	L = [user.id, expires, hashlib.sha1(s.encode('utf-8')).hexdigest()]
 	return '-'.join(L)
 
+
 # ??
 def text2html(text):
     lines = map(lambda s: '<p>%s</p>' % s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'), filter(lambda s: s.strip() != '', text.split('\n')))
     return ''.join(lines)
+
 
 #根据cookie值验证身份
 @asyncio.coroutine
@@ -104,7 +106,7 @@ def get_blog(id):
     comments = yield from Comment.findAll('blog_id=?', [id], orderBy='created_at desc')
     for c in comments:
         c.html_conetnt = text2html(c.content)
-    blog.html_conetnt = markdown2.markdown(blog.content)
+    blog.html_content = markdown2.markdown(blog.content)
     return {
         '__template__': 'blog.html',
         'blog': blog,
@@ -165,7 +167,7 @@ def signout(request):
 	return r 
 
 
-# 管理博客页
+# 博客首页
 @get('/manage/blogs')
 def manage_blogs(*, page='1'):
 	return {
@@ -173,14 +175,25 @@ def manage_blogs(*, page='1'):
 		'page_index': get_page_index(page)
 	}
 
-# 日志创建页
+# 创建博客页
 @get('/manage/blogs/create')
 def manage_create_blog():
     return {
         '__template__': 'manage_blog_edit.html',
-        'id': '', # why id is empty?
+        'id': '', # why id is empty? 新建的博客ID默认为空 创建完成后赋予ID
         'action': '/api/blogs'
     }
+
+
+# 修改博客页
+@get('/manage/blogs/edit')
+def manage_edit_blog(*, id):
+	return {
+		'__template__': 'manage_blog_edit.html',
+		'id': id,
+		'action': '/api/blogs/%s' % id
+	}
+
 
 
 _RE_EMALI = re.compile(r'^[a-z0-9\.\-\_]+\@[a-z0-9\-\_]+(\.[a-z0-9\-\_]+){1,4}$')
@@ -228,11 +241,11 @@ def api_blogs(*, page='1'):
 	return dict(page=p, blogs=blogs)
 
 
-# # 创建新博客后返回数据
-# @get('/api/blogs/{id}')
-# def api_get_blog(*, id):
-# 	blog = yield from Blog.find(id)
-# 	return blog
+# 创建新博客后返回数据
+@get('/api/blogs/{id}')
+def api_get_blog(*, id):
+	blog = yield from Blog.find(id)
+	return blog
 
 
 # 检查用户身份和博客内容
@@ -249,6 +262,23 @@ def api_create_blog(request, *, name, summary, content):
     yield from blog.save()
     return blog 
 
+
+# 修改博客内容后提交更新
+@post('/api/blogs/{id}')
+def api_update_blog(id, request, *, name, summary, content):
+	check_admin(request)
+	blog = yield from Blog.find(id)
+	if not name or not name.strip():
+		raise APIValueError('name', 'name cannot be empty.')
+	if not summary or not summary.strip():
+		raise APIValueError('summary', 'summray cannot be empty.')
+	if not content or not content.strip():
+		raise APIValueError('content', 'content cannot be empty.')
+	blog.name = name.strip()
+	blog.summary = summary.strip()
+	blog.content = content.strip()
+	yield from blog.update()
+	return blog
 
 
 
