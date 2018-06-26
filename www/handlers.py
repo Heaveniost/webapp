@@ -228,11 +228,11 @@ def api_blogs(*, page='1'):
 	return dict(page=p, blogs=blogs)
 
 
-# 创建新博客后返回数据
-@get('/api/blogs/{id}')
-def api_get_blog(*, id):
-	blog = yield from Blog.find(id)
-	return blog
+# # 创建新博客后返回数据
+# @get('/api/blogs/{id}')
+# def api_get_blog(*, id):
+# 	blog = yield from Blog.find(id)
+# 	return blog
 
 
 # 检查用户身份和博客内容
