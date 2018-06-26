@@ -266,7 +266,7 @@ def api_create_blog(request, *, name, summary, content):
 # 修改博客内容后提交更新
 @post('/api/blogs/{id}')
 def api_update_blog(id, request, *, name, summary, content):
-	check_admin(request)
+	check_admin(request) 
 	blog = yield from Blog.find(id)
 	if not name or not name.strip():
 		raise APIValueError('name', 'name cannot be empty.')
@@ -279,6 +279,15 @@ def api_update_blog(id, request, *, name, summary, content):
 	blog.content = content.strip()
 	yield from blog.update()
 	return blog
+
+
+# 删除日志
+@post('/api/blogs/{id}/delete')
+def api_delete_blog(request, *, id):
+	check_admin(request)
+	blog = yield from Blog.find(id)
+	yield from blog.remove()
+	return dict(id=id) # ???
 
 
 
