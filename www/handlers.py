@@ -82,17 +82,18 @@ def cookie2user(cookie_str):
 
 # 访问首页
 @get('/')
-def index(request):
-	# summary 就是页面博客显示的内容
-	summary = 'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
-	blogs = [
-		Blog(id='1', name='Test Blog', summary=summary, created_at=time.time()-120),
-		Blog(id='2', name='Something New', summary=summary, created_at=time.time()-3600),
-		Blog(id='3', name='Learn More', summary=summary, created_at=time.time()-7200)
-	]
+def index(*, page='1'):
+	page_index = get_page_index(page)
+	num = yield from Blog.findNumber('count(id)')
+	page = Page(num)
+	if num == 0:
+		blogs = []
+	else:
+		blogs = yield from Blog.findAll(orderBy='created_at desc', limit=(page.offset, page.limit))
 	return {
 		'__template__': 'blogs.html',
-		'blogs': blogs,
+		'page': page,
+		'blogs': blogs
 		}
 
 
