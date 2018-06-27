@@ -204,6 +204,14 @@ def manage_edit_blog(*, id):
 	}
 
 
+# 用户管理
+@get('/manage/users')
+def manage_users(*, page='1'):
+	return {
+		'__template__': 'manage_users.html',
+		'page_index': get_page_index(page)
+	}
+
 # 返回评论内容给模板
 @get('/api/comments')
 def api_comments(*, page='1'):
@@ -243,6 +251,19 @@ def api_delete_comments(id, request):
 	return dict(id=id)
 
 
+# 获取用户
+@get('/api/users')
+def api_get_users(*, page='1'):
+	page_index = get_page_index(page)
+	num = yield from User.findNumber('count(id)')
+	p = Page(num, page_index)
+	if num == 0:
+		return dict(page=p, users=())
+	users = yield from User.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
+	for u in users:
+		u.passwd = '******'
+		return dict(page=p, users=users)
+
 _RE_EMALI = re.compile(r'^[a-z0-9\.\-\_]+\@[a-z0-9\-\_]+(\.[a-z0-9\-\_]+){1,4}$')
 _RE_SHA1 = re.compile(r'^[0-9a-f]{40}$')
 
@@ -275,6 +296,7 @@ def api_register_user(*, email, name, passwd):
 	r.content_type = 'application/json'
 	r.body = json.dumps(user, ensure_ascii=False).encode('utf-8')
 	return r
+
 
 # 显示博客页
 @get('/api/blogs')
