@@ -232,6 +232,17 @@ def api_create_comment(id, request, *, content):
     return comment
 
 
+# 删除评论
+@post('/api/comments/{id}/delete')
+def api_delete_comments(id, request):
+	check_admin(request)
+	c = yield from Comment.find(id)
+	if c is None:
+		raise APIResourceNotFoundError('Comment')
+	yield from c.remove()
+	return dict(id=id)
+
+
 _RE_EMALI = re.compile(r'^[a-z0-9\.\-\_]+\@[a-z0-9\-\_]+(\.[a-z0-9\-\_]+){1,4}$')
 _RE_SHA1 = re.compile(r'^[0-9a-f]{40}$')
 
