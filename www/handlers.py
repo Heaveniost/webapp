@@ -167,6 +167,15 @@ def signout(request):
 	return r 
 
 
+# 访问评论页
+@get('/manage/comments')
+def manage_comments(*, page='1'):
+	return {
+		'__template__': 'manage_comments.html',
+		'page_index': get_page_index(page)
+	}
+
+
 # 博客首页
 @get('/manage/blogs')
 def manage_blogs(*, page='1'):
@@ -194,6 +203,33 @@ def manage_edit_blog(*, id):
 		'action': '/api/blogs/%s' % id
 	}
 
+
+# 返回评论内容给模板
+@get('/api/comments')
+def api_comments(*, page='1'):
+	page_index = get_page_index(page)
+	num = yield from Comment.findNumber('count(id)')
+	p = Page(num, page_index)
+	if num == 0:
+		return dict(page=p, comments=())
+	comments = yield from Comment.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
+	return dict(page=p, comments=comments)
+
+
+# 发表评论
+@post('/api/blogs/{id}/comments')
+def api_create_comment(id, request, *, content):
+    user = request.__user__
+    if user is None:
+        raise APIPermissionError('Please signin first.')
+    if not content or not content.strip():
+        raise APIValueError('content')
+    blog = yield from Blog.find(id)
+    if blog is None:
+        raise APIResourceNotFoundError('Blog')
+    comment = Comment(blog_id=blog.id, user_id=user.id, user_name=user.name, user_image=user.image, content=content.strip())
+    yield from comment.save()
+    return comment
 
 
 _RE_EMALI = re.compile(r'^[a-z0-9\.\-\_]+\@[a-z0-9\-\_]+(\.[a-z0-9\-\_]+){1,4}$')
